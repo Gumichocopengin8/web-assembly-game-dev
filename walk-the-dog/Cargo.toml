@@ -36,11 +36,21 @@ console_error_panic_hook = "0.1.7"
 # allocator, so it's not enabled by default.
 wee_alloc = { version = "0.4.5", optional = true }
 
+rand = "0.8.5"
+getrandom = { version = "0.2.10", features = ["js"] }
+
 # The `web-sys` crate allows you to interact with the various browser APIs,
 # like the DOM.
 [dependencies.web-sys]
 version = "0.3.64"
-features = ["console"]
+features = [
+  "console",
+  "Window",
+  "Document",
+  "HtmlCanvasElement",
+  "CanvasRenderingContext2d",
+  "Element",
+]
 
 
 # These crates are used for running unit tests.
