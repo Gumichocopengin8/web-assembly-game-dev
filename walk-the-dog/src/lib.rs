@@ -11,6 +11,8 @@ use web_sys::console;
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
+struct Color(u8, u8, u8);
+
 // This is like the `main` function, except for JavaScript.
 #[wasm_bindgen(start)]
 pub fn main_js() -> Result<(), JsValue> {
@@ -34,7 +36,7 @@ pub fn main_js() -> Result<(), JsValue> {
     sierpinski(
         &context,
         [(300.0, 0.0), (0.0, 600.0), (600.0, 600.0)],
-        (0, 255, 0),
+        &Color(0, 255, 0),
         7,
     );
     Ok(())
@@ -43,7 +45,7 @@ pub fn main_js() -> Result<(), JsValue> {
 fn draw_triangle(
     context: &web_sys::CanvasRenderingContext2d,
     points: [(f64, f64); 3],
-    color: (u8, u8, u8),
+    color: &Color,
 ) {
     let [top, left, right] = points;
     let color_str = format!("rgb({}, {}, {})", color.0, color.1, color.2);
@@ -62,7 +64,7 @@ fn draw_triangle(
 fn sierpinski(
     context: &web_sys::CanvasRenderingContext2d,
     points: [(f64, f64); 3],
-    color: (u8, u8, u8),
+    color: &Color,
     depth: u8,
 ) {
     draw_triangle(context, points, color);
@@ -70,7 +72,7 @@ fn sierpinski(
     let [top, left, right] = points;
     let mut rng = thread_rng();
 
-    let next_color = (
+    let next_color = Color(
         rng.gen_range(0..255),
         rng.gen_range(0..255),
         rng.gen_range(0..255),
@@ -81,17 +83,22 @@ fn sierpinski(
         let right_middle = midpoint(top, right);
         let bottom_middle = midpoint(left, right);
 
-        sierpinski(context, [top, left_middle, right_middle], next_color, depth);
+        sierpinski(
+            context,
+            [top, left_middle, right_middle],
+            &next_color,
+            depth,
+        );
         sierpinski(
             context,
             [left_middle, left, bottom_middle],
-            next_color,
+            &next_color,
             depth,
         );
         sierpinski(
             context,
             [right_middle, bottom_middle, right],
-            next_color,
+            &next_color,
             depth,
         );
     }
