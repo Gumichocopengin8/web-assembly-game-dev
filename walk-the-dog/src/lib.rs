@@ -1,7 +1,9 @@
+use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::Mutex;
 
 use rand::prelude::*;
+use serde::Deserialize;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::console;
@@ -13,6 +15,24 @@ use web_sys::console;
 #[cfg(feature = "wee_alloc")]
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+
+#[derive(Deserialize)]
+struct Sheet {
+    frames: HashMap<String, Cell>,
+}
+
+#[derive(Deserialize)]
+struct Rect {
+    x: u16,
+    y: u16,
+    w: u16,
+    h: u16,
+}
+
+#[derive(Deserialize)]
+struct Cell {
+    frame: Rect,
+}
 
 struct Color(u8, u8, u8);
 
@@ -63,6 +83,12 @@ pub fn main_js() -> Result<(), JsValue> {
             &Color(0, 255, 0),
             7,
         );
+
+        let json = fetch_json("rhb.json")
+            .await
+            .expect("Could not fetch rhb.json");
+        let sheet: Sheet = serde_wasm_bindgen::from_value(json)
+            .expect("Could not convert rhb.json into a Sheet structure");
     });
     Ok(())
 }
