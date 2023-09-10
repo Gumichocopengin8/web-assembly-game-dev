@@ -2,9 +2,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::Mutex;
 
-use rand::prelude::*;
 use serde::Deserialize;
-use wasm_bindgen::convert::IntoWasmAbi;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::console;
@@ -34,8 +32,6 @@ struct Rect {
 struct Cell {
     frame: Rect,
 }
-
-struct Color(u8, u8, u8);
 
 // This is like the `main` function, except for JavaScript.
 #[wasm_bindgen(start)]
@@ -77,13 +73,6 @@ pub fn main_js() -> Result<(), JsValue> {
         image.set_src("Idle (1).png");
         let _ = success_rx.await;
         let _ = context.draw_image_with_html_image_element(&image, 0.0, 0.0);
-
-        sierpinski(
-            &context,
-            [(300.0, 0.0), (0.0, 600.0), (600.0, 600.0)],
-            &Color(0, 255, 0),
-            7,
-        );
 
         let json = fetch_json("rhb.json")
             .await
@@ -132,70 +121,4 @@ async fn fetch_json(json_path: &str) -> Result<JsValue, JsValue> {
     let resp: web_sys::Response = resp_value.dyn_into()?;
 
     wasm_bindgen_futures::JsFuture::from(resp.json()?).await
-}
-
-fn draw_triangle(
-    context: &web_sys::CanvasRenderingContext2d,
-    points: [(f64, f64); 3],
-    color: &Color,
-) {
-    let [top, left, right] = points;
-    let color_str = format!("rgb({}, {}, {})", color.0, color.1, color.2);
-
-    context.set_fill_style(&wasm_bindgen::JsValue::from_str(&color_str));
-    context.move_to(top.0, top.1);
-    context.begin_path();
-    context.line_to(left.0, left.1);
-    context.line_to(right.0, right.1);
-    context.line_to(top.0, top.1);
-    context.close_path();
-    context.stroke();
-    context.fill();
-}
-
-fn sierpinski(
-    context: &web_sys::CanvasRenderingContext2d,
-    points: [(f64, f64); 3],
-    color: &Color,
-    depth: u8,
-) {
-    draw_triangle(context, points, color);
-    let depth = depth - 1;
-    let [top, left, right] = points;
-    let mut rng = thread_rng();
-
-    let next_color = Color(
-        rng.gen_range(0..255),
-        rng.gen_range(0..255),
-        rng.gen_range(0..255),
-    );
-
-    if depth > 0 {
-        let left_middle = midpoint(top, left);
-        let right_middle = midpoint(top, right);
-        let bottom_middle = midpoint(left, right);
-
-        sierpinski(
-            context,
-            [top, left_middle, right_middle],
-            &next_color,
-            depth,
-        );
-        sierpinski(
-            context,
-            [left_middle, left, bottom_middle],
-            &next_color,
-            depth,
-        );
-        sierpinski(
-            context,
-            [right_middle, bottom_middle, right],
-            &next_color,
-            depth,
-        );
-    }
-}
-
-fn midpoint(point_1: (f64, f64), point_2: (f64, f64)) -> (f64, f64) {
-    ((point_1.0 + point_2.0) / 2.0, (point_1.1 + point_2.1) / 2.0)
 }
