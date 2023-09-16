@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     browser,
-    engine::{self, Game, Rect, Renderer},
+    engine::{self, Game, Rect, Renderer, KeyState},
 };
 use anyhow::Result;
 use async_trait::async_trait;
@@ -57,7 +57,7 @@ impl Game for WalkTheDog {
         }))
     }
 
-    fn update(&mut self) {
+    fn update(&mut self, keystate: &KeyState) {
         if self.frame < 23 {
             self.frame += 1;
         } else {
