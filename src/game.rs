@@ -4,7 +4,7 @@ use crate::{
     browser,
     engine::{self, Game, KeyState, Point, Rect, Renderer},
 };
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use serde::Deserialize;
 use web_sys::HtmlImageElement;
@@ -48,8 +48,9 @@ impl WalkTheDog {
 #[async_trait(?Send)]
 impl Game for WalkTheDog {
     async fn initialize(&self) -> Result<Box<dyn Game>> {
-        let sheet: Sheet = serde_wasm_bindgen::from_value(browser::fetch_json("rhb.json").await?)
-            .expect("Could not convert rhb.json into a Sheet structure");
+        let sheet: Sheet =
+            serde_wasm_bindgen::from_value(browser::fetch_json("rhb.json").await?)
+                .map_err(|_| anyhow!("Could not convert rhb.json into a Sheet structure"))?;
         let image = engine::load_image("rhb.png").await?;
 
         Ok(Box::new(WalkTheDog {
