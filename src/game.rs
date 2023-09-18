@@ -9,6 +9,8 @@ use async_trait::async_trait;
 use serde::Deserialize;
 use web_sys::HtmlImageElement;
 
+use self::red_hat_boy_states::*;
+
 #[derive(Deserialize)]
 struct SheetRect {
     x: i16,
@@ -120,6 +122,68 @@ impl Game for WalkTheDog {
                     height: sprite.frame.h.into(),
                 },
             );
+        }
+    }
+}
+
+mod red_hat_boy_states {
+    use crate::engine::Point;
+
+    #[derive(Copy, Clone)]
+    pub struct RedHatBoyState<S> {
+        context: RedHatBoyContext,
+        _state: S,
+    }
+
+    #[derive(Copy, Clone)]
+    pub struct RedHatBoyContext {
+        frame: u8,
+        position: Point,
+        velocity: Point,
+    }
+
+    #[derive(Copy, Clone)]
+    pub struct Idle;
+    #[derive(Copy, Clone)]
+    pub struct Running;
+
+    impl RedHatBoyState<Idle> {
+        pub fn run(self) -> RedHatBoyState<Running> {
+            RedHatBoyState {
+                context: self.context,
+                _state: Running {},
+            }
+        }
+    }
+}
+
+struct RedHatBoy {
+    state_machine: RedHatBoyStateMachine,
+    sprite_sheet: Sheet,
+    image: HtmlImageElement,
+}
+
+pub enum Event {
+    Run,
+}
+
+#[derive(Copy, Clone)]
+enum RedHatBoyStateMachine {
+    Idle(RedHatBoyState<Idle>),
+    Running(RedHatBoyState<Running>),
+}
+
+impl From<RedHatBoyState<Running>> for RedHatBoyStateMachine {
+    fn from(state: RedHatBoyState<Running>) -> Self {
+        RedHatBoyStateMachine::Running(state)
+    }
+}
+
+impl RedHatBoyStateMachine {
+    fn transition(self, event: Event) -> Self {
+        match (self, event) {
+            (RedHatBoyStateMachine::Idle(state), Event::Run) => state.run().into(),
+            _ => self,
         }
     }
 }
