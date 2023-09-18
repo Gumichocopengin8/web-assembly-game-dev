@@ -57,7 +57,7 @@ impl Game for WalkTheDog {
 
     fn update(&mut self, keystate: &KeyState) {
         if keystate.is_pressed("ArrowDown") {
-            unimplemented!()
+            self.rhb.as_mut().unwrap().slide();
         }
 
         if keystate.is_pressed("ArrowUp") {
@@ -92,6 +92,8 @@ mod red_hat_boy_states {
     const IDLE_FRAMES: u8 = 29;
     const RUNNING_FRAMES: u8 = 23;
     const RUNNING_SPEED: i16 = 3;
+    const SLIDING_FRAMES: u8 = 14;
+    const SLIDING_FRAME_NAME: &str = "Slide";
     const FLOOR: i16 = 475;
     const IDLE_FRAME_NAME: &str = "Idle";
     const RUN_FRAME_NAME: &str = "Run";
@@ -136,6 +138,8 @@ mod red_hat_boy_states {
     pub struct Idle;
     #[derive(Copy, Clone)]
     pub struct Running;
+    #[derive(Copy, Clone)]
+    pub struct Sliding;
 
     impl RedHatBoyState<Idle> {
         pub fn new() -> Self {
@@ -173,11 +177,28 @@ mod red_hat_boy_states {
         pub fn update(&mut self) {
             self.context = self.context.update(RUNNING_FRAMES);
         }
+
+        pub fn slide(self) -> RedHatBoyState<Sliding> {
+            RedHatBoyState {
+                context: self.context.reset_frame(),
+                _state: Sliding {},
+            }
+        }
     }
 
     impl<S> RedHatBoyState<S> {
         pub fn context(&self) -> &RedHatBoyContext {
             &self.context
+        }
+    }
+
+    impl RedHatBoyState<Sliding> {
+        pub fn frame_name(&self) -> &str {
+            SLIDING_FRAME_NAME
+        }
+
+        pub fn update(&mut self) {
+            self.context = self.context.update(SLIDING_FRAMES);
         }
     }
 }
@@ -234,16 +255,22 @@ impl RedHatBoy {
     fn run_right(&mut self) {
         self.state_machine = self.state_machine.transition(Event::Run);
     }
+
+    fn slide(&mut self) {
+        self.state_machine = self.state_machine.transition(Event::Slide);
+    }
 }
 
 pub enum Event {
     Run,
+    Slide,
 }
 
 #[derive(Copy, Clone)]
 enum RedHatBoyStateMachine {
     Idle(RedHatBoyState<Idle>),
     Running(RedHatBoyState<Running>),
+    Sliding(RedHatBoyState<Sliding>),
 }
 
 impl From<RedHatBoyState<Running>> for RedHatBoyStateMachine {
@@ -252,10 +279,17 @@ impl From<RedHatBoyState<Running>> for RedHatBoyStateMachine {
     }
 }
 
+impl From<RedHatBoyState<Sliding>> for RedHatBoyStateMachine {
+    fn from(state: RedHatBoyState<Sliding>) -> Self {
+        RedHatBoyStateMachine::Sliding(state)
+    }
+}
+
 impl RedHatBoyStateMachine {
     fn transition(self, event: Event) -> Self {
         match (self, event) {
             (RedHatBoyStateMachine::Idle(state), Event::Run) => state.run().into(),
+            (RedHatBoyStateMachine::Running(state), Event::Slide) => state.slide().into(),
             _ => self,
         }
     }
@@ -264,6 +298,7 @@ impl RedHatBoyStateMachine {
         match self {
             RedHatBoyStateMachine::Idle(state) => state.frame_name(),
             RedHatBoyStateMachine::Running(state) => state.frame_name(),
+            RedHatBoyStateMachine::Sliding(state) => state.frame_name(),
         }
     }
 
@@ -271,6 +306,7 @@ impl RedHatBoyStateMachine {
         match self {
             RedHatBoyStateMachine::Idle(state) => state.context(),
             RedHatBoyStateMachine::Running(state) => state.context(),
+            RedHatBoyStateMachine::Sliding(state) => state.context(),
         }
     }
 
@@ -283,6 +319,10 @@ impl RedHatBoyStateMachine {
             RedHatBoyStateMachine::Running(mut state) => {
                 state.update();
                 RedHatBoyStateMachine::Running(state)
+            }
+            RedHatBoyStateMachine::Sliding(mut state) => {
+                state.update();
+                RedHatBoyStateMachine::Sliding(state)
             }
         }
     }
