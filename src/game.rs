@@ -81,6 +81,7 @@ impl Game for WalkTheDog {
 
         if keystate.is_pressed("ArrowRight") {
             velocity.x += 3;
+            self.rhb.as_mut().unwrap().run_right();
         }
 
         if keystate.is_pressed("ArrowLeft") {
@@ -139,6 +140,7 @@ mod red_hat_boy_states {
 
     const IDLE_FRAMES: u8 = 29;
     const RUNNING_FRAMES: u8 = 23;
+    const RUNNING_SPEED: i16 = 3;
     const FLOOR: i16 = 475;
     const IDLE_FRAME_NAME: &str = "Idle";
     const RUN_FRAME_NAME: &str = "Run";
@@ -163,6 +165,18 @@ mod red_hat_boy_states {
             } else {
                 self.frame = 0;
             }
+            self.position.x += self.velocity.x;
+            self.position.y += self.velocity.y;
+            self
+        }
+
+        fn reset_frame(mut self) -> Self {
+            self.frame = 0;
+            self
+        }
+
+        fn run_right(mut self) -> Self {
+            self.velocity.x += RUNNING_SPEED;
             self
         }
     }
@@ -186,7 +200,7 @@ mod red_hat_boy_states {
 
         pub fn run(self) -> RedHatBoyState<Running> {
             RedHatBoyState {
-                context: self.context,
+                context: self.context.reset_frame().run_right(),
                 _state: Running {},
             }
         }
@@ -264,6 +278,10 @@ impl RedHatBoy {
 
     fn update(&mut self) {
         self.state_machine = self.state_machine.update();
+    }
+
+    fn run_right(&mut self) {
+        self.state_machine = self.state_machine.transition(Event::Run);
     }
 }
 
