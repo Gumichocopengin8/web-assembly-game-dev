@@ -29,60 +29,66 @@ pub struct Sheet {
     frames: HashMap<String, Cell>,
 }
 
-pub struct WalkTheDog {
-    rhb: Option<RedHatBoy>,
+pub enum WalkTheDog {
+    Loading,
+    Loaded(RedHatBoy),
 }
 
 impl WalkTheDog {
     pub fn new() -> Self {
-        WalkTheDog { rhb: None }
+        WalkTheDog::Loading
     }
 }
 
 #[async_trait(?Send)]
 impl Game for WalkTheDog {
     async fn initialize(&self) -> Result<Box<dyn Game>> {
-        let sheet: Option<Sheet> =
-            serde_wasm_bindgen::from_value(browser::fetch_json("rhb.json").await?)
-                .map_err(|_| anyhow!("Could not convert rhb.json into a Sheet structure"))?;
-        let image = Some(engine::load_image("rhb.png").await?);
-
-        Ok(Box::new(WalkTheDog {
-            rhb: Some(RedHatBoy::new(
-                sheet.ok_or_else(|| anyhow!("No Sheet Present"))?,
-                image.ok_or_else(|| anyhow!("No Image Present"))?,
-            )),
-        }))
+        match self {
+            WalkTheDog::Loading => {
+                let json = browser::fetch_json("rhb.json").await?;
+                let rhb = RedHatBoy::new(
+                    serde_wasm_bindgen::from_value(json).map_err(|_| {
+                        anyhow!("Could not convert rhb.json into a Sheet structure")
+                    })?,
+                    engine::load_image("rhb.png").await?,
+                );
+                Ok(Box::new(WalkTheDog::Loaded(rhb)))
+            }
+            WalkTheDog::Loaded(_) => Err(anyhow!("Error: Game is already initialized!")),
+        }
     }
 
     fn update(&mut self, keystate: &KeyState) {
-        if keystate.is_pressed("ArrowDown") {
-            self.rhb.as_mut().unwrap().slide();
-        }
+        if let WalkTheDog::Loaded(rhb) = self {
+            if keystate.is_pressed("ArrowDown") {
+                rhb.slide();
+            }
 
-        if keystate.is_pressed("ArrowUp") {
-            unimplemented!()
-        }
+            if keystate.is_pressed("ArrowUp") {
+                unimplemented!()
+            }
 
-        if keystate.is_pressed("ArrowRight") {
-            self.rhb.as_mut().unwrap().run_right();
-        }
+            if keystate.is_pressed("ArrowRight") {
+                rhb.run_right();
+            }
 
-        if keystate.is_pressed("ArrowLeft") {
-            unimplemented!()
+            if keystate.is_pressed("ArrowLeft") {
+                unimplemented!()
+            }
+            rhb.update();
         }
-        self.rhb.as_mut().unwrap().update();
     }
 
     fn draw(&self, renderer: &Renderer) {
-        renderer.clear(&Rect {
-            x: 0.0,
-            y: 0.0,
-            width: 600.0,
-            height: 600.0,
-        });
-
-        self.rhb.as_ref().unwrap().draw(renderer);
+        if let WalkTheDog::Loaded(rhb) = self {
+            renderer.clear(&Rect {
+                x: 0.0,
+                y: 0.0,
+                width: 600.0,
+                height: 600.0,
+            });
+            rhb.draw(renderer);
+        }
     }
 }
 
@@ -223,7 +229,7 @@ mod red_hat_boy_states {
     }
 }
 
-struct RedHatBoy {
+pub struct RedHatBoy {
     state_machine: RedHatBoyStateMachine,
     sprite_sheet: Sheet,
     image: HtmlImageElement,
