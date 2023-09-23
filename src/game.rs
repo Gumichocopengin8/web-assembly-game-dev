@@ -20,8 +20,10 @@ struct SheetRect {
 }
 
 #[derive(Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 struct Cell {
     frame: SheetRect,
+    pub sprite_source_size: SheetRect,
 }
 
 #[derive(Deserialize)]
@@ -113,7 +115,8 @@ mod red_hat_boy_states {
     const GRAVITY: i16 = 1;
     const SLIDING_FRAMES: u8 = 14;
     const JUMP_FRAMES: u8 = 35;
-    const FLOOR: i16 = 475;
+    const FLOOR: i16 = 479;
+    const STARTING_POINT: i16 = -20;
     const IDLE_FRAME_NAME: &str = "Idle";
     const RUN_FRAME_NAME: &str = "Run";
     const SLIDING_FRAME_NAME: &str = "Slide";
@@ -178,7 +181,10 @@ mod red_hat_boy_states {
             RedHatBoyState {
                 context: RedHatBoyContext {
                     frame: 0,
-                    position: Point { x: 0, y: FLOOR },
+                    position: Point {
+                        x: STARTING_POINT,
+                        y: FLOOR,
+                    },
                     velocity: Point { x: 0, y: 0 },
                 },
                 _state: Idle {},
@@ -326,8 +332,10 @@ impl RedHatBoy {
                 height: sprite.frame.h.into(),
             },
             &Rect {
-                x: self.state_machine.context().position.x.into(),
-                y: self.state_machine.context().position.y.into(),
+                x: (self.state_machine.context().position.x + sprite.sprite_source_size.x as i16)
+                    .into(),
+                y: (self.state_machine.context().position.y + sprite.sprite_source_size.y as i16)
+                    .into(),
                 width: sprite.frame.w.into(),
                 height: sprite.frame.h.into(),
             },
