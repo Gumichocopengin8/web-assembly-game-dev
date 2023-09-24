@@ -97,15 +97,24 @@ impl GameLoop {
     }
 }
 
-pub struct Renderer {
-    context: CanvasRenderingContext2d,
-}
-
 pub struct Rect {
     pub x: f32,
     pub y: f32,
     pub width: f32,
     pub height: f32,
+}
+
+impl Rect {
+    pub fn intersects(&self, rect: &Rect) -> bool {
+        self.x < (rect.x + rect.width)
+            && self.x + self.width > rect.x
+            && self.y < (rect.y + rect.height)
+            && self.y + self.height > rect.y
+    }
+}
+
+pub struct Renderer {
+    context: CanvasRenderingContext2d,
 }
 
 impl Renderer {
