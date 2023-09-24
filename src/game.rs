@@ -12,6 +12,8 @@ use web_sys::HtmlImageElement;
 use self::red_hat_boy_states::*;
 
 const HEIGHT: i16 = 600;
+const LOW_PLATFORM: i16 = 420;
+const HIGH_PLATFORM: i16 = 375;
 
 #[derive(Deserialize, Clone)]
 struct SheetRect {
@@ -72,7 +74,10 @@ impl Game for WalkTheDog {
                         anyhow!("Could not convert rhb.json into a Sheet structure")
                     })?,
                     engine::load_image("tiles.png").await?,
-                    Point { x: 200, y: 400 },
+                    Point {
+                        x: 370,
+                        y: LOW_PLATFORM,
+                    },
                 );
 
                 Ok(Box::new(WalkTheDog::Loaded(Walk {
@@ -230,7 +235,7 @@ mod red_hat_boy_states {
 
     const IDLE_FRAMES: u8 = 29;
     const RUNNING_FRAMES: u8 = 23;
-    const RUNNING_SPEED: i16 = 3;
+    const RUNNING_SPEED: i16 = 4;
     const JUMP_SPEED: i16 = -25;
     const GRAVITY: i16 = 1;
     const SLIDING_FRAMES: u8 = 14;
