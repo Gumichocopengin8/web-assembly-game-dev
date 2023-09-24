@@ -410,9 +410,16 @@ mod red_hat_boy_states {
             self.context = self.context.update(SLIDING_FRAMES);
 
             if self.context.frame >= SLIDING_FRAMES {
-                SlidingEndState::Complete(self.land_on(HEIGHT.into()))
+                SlidingEndState::Complete(self.stand())
             } else {
                 SlidingEndState::Sliding(self)
+            }
+        }
+
+        pub fn stand(self) -> RedHatBoyState<Running> {
+            RedHatBoyState {
+                context: self.context.reset_frame(),
+                _state: Running {},
             }
         }
 
