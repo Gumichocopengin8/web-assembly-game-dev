@@ -296,6 +296,7 @@ mod red_hat_boy_states {
 
         fn stop(mut self) -> Self {
             self.velocity.x = 0;
+            self.velocity.y = 0;
             self
         }
 
@@ -423,10 +424,10 @@ mod red_hat_boy_states {
             }
         }
 
-        pub fn land_on(self, position: f32) -> RedHatBoyState<Running> {
+        pub fn land_on(self, position: f32) -> RedHatBoyState<Sliding> {
             RedHatBoyState {
-                context: self.context.reset_frame().set_on(position as i16),
-                _state: Running,
+                context: self.context.set_on(position as i16),
+                _state: Sliding {},
             }
         }
 
